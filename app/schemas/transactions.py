@@ -21,8 +21,6 @@ class ResCreateTransactionSchema(BaseModel):
     t_id: str
 
 
-
-
 class CardTransactionsDetails(BaseModel):
     label: str
     card_no: str

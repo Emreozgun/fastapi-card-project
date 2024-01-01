@@ -1,7 +1,7 @@
 import uuid as uuid_pkg
 from fastapi import Depends
-from typing import Optional
-from sqlalchemy import delete, update, func
+from typing import Optional, List, Type
+from sqlalchemy import delete, update, func, desc
 # from app.exc import raise_with_log
 from app.models.card import CardModel
 from app.models.users import UserModel
@@ -10,7 +10,7 @@ from app.schemas.auth import (
 )
 from app.schemas.base import ResMessageSchema
 from app.schemas.card import ReqCreateCardSchema, ResCreateCardSchema, ReqDeleteCardSchema, \
-    ReqUpdateCardSchema
+    ReqUpdateCardSchema, ResFindAllCardSchema
 from app.services.base import BaseDataManager, BaseService
 from beartype import beartype
 from typing import Union
@@ -27,17 +27,17 @@ from app.util.card import generate_card_no
 class CardService(BaseService):
     def create_card(self, data: ReqCreateCardSchema,
                     user: UserSchema = Depends(get_current_user)) -> ResCreateCardSchema:
-
+        print(user.dict())
         if not data.card_no:
-            excluded_card_nos = CardDataManager(self.session).find_all(user_id=user.user_uuid)
+            excluded_card_nos = CardDataManager(self.session).find_all(user_id=user.id)
             generate_card_no(excluded_card_nos=excluded_card_nos)
 
-        card = CardDataManager(self.session).create_card(label=data.label, card_no=data.card_no, user_id=user.user_uuid)
+        card = CardDataManager(self.session).create_card(label=data.label, card_no=data.card_no, user_id=user.id)
         return ResCreateCardSchema(card_no=card.card_no)
 
     def update_card(self, data: ReqUpdateCardSchema, user: UserSchema = Depends(get_current_user)) -> ResMessageSchema:
         card = CardDataManager(self.session).update_card(status=data.status, label=data.label, card_no=data.card_no,
-                                                         user_id=user.user_uuid)
+                                                         user_id=user.id)
 
         if card.status == data.status:
             return ResMessageSchema(message=f"Card is updated", is_success=True)
@@ -45,18 +45,23 @@ class CardService(BaseService):
             return ResMessageSchema(message=f"Card is not updated!", is_success=False)
 
     def delete_card(self, data: ReqDeleteCardSchema, user: UserSchema = Depends(get_current_user)) -> ResMessageSchema:
-        card = CardDataManager(self.session).delete_card(card_no=data.card_no, user_id=user.user_uuid)
+        card = CardDataManager(self.session).delete_card(card_no=data.card_no, user_id=user.id)
         if card:
             return ResMessageSchema(message=f"Card is deleted", is_success=True)
         else:
             return ResMessageSchema(message=f"Card is not deleted!", is_success=False)
 
-    # def find_all_cards(self, user: UserSchema = Depends(get_current_user_helper)) -> list[Type[CardModel]]:
-    #     cards = CardDataManager(self.session).find_all(user_id=user.user_uuid)
-    #     return cards
+    def find_all_cards(self, user: UserSchema = Depends(get_current_user)) -> ResFindAllCardSchema:
+        cards = CardDataManager(self.session).find_all(user_id=user.id)
+
+        cards_list = []
+        for c in cards:
+            cards_list.append(CardModel(label=c["label"], card_no=c["card_no"], amount=c["user_id"], description=c["status"]))
+
+        return ResFindAllCardSchema(cards=cards_list)
 
     def validate_user_card_access(self, card_no: str, user: UserSchema = Depends(get_current_user)) -> bool:
-        card = CardDataManager(self.session).validate_user_card_access(user_id=user.user_uuid, card_no=card_no)
+        card = CardDataManager(self.session).validate_user_card_access(user_id=user.id, card_no=card_no)
 
         return True if card else False
 
@@ -121,10 +126,10 @@ class CardDataManager(BaseDataManager):
 
         return updated_model
 
-    # def find_all(self, user_id: str) -> list[Type[CardModel]]:
-    #     return self.session.query(CardModel).filter(
-    #         CardModel.user_id == user_id, CardModel.status != 'deleted'
-    #     ).order_by(desc(CardModel.date_modified)).all()
+    def find_all(self, user_id: str) -> List[Type[CardModel]]:
+        return self.session.query(CardModel).filter(
+            CardModel.user_id == user_id, CardModel.status != 'deleted'
+        ).order_by(desc(CardModel.date_modified)).all()
 
     # TODO: dev env
     if True:

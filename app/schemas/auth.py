@@ -28,4 +28,4 @@ class TokenSchema(BaseModel):
 
 class UserSchema(BaseModel):
     Config = SchemaCamelCaseConfig
-    user_uuid: str
+    id: str

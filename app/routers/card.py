@@ -9,7 +9,8 @@ from app.schemas.auth import (
     TokenSchema, UserSchema,
 )
 from app.schemas.base import ResMessageSchema
-from app.schemas.card import ResCreateCardSchema, ReqCreateCardSchema, ReqUpdateCardSchema, ReqDeleteCardSchema
+from app.schemas.card import ResCreateCardSchema, ReqCreateCardSchema, ReqUpdateCardSchema, ReqDeleteCardSchema, \
+    ResFindAllCardSchema
 
 from app.services.card import CardService
 from app.util.common import get_current_user
@@ -44,9 +45,9 @@ def delete(
     return CardService(db_session).delete_card(data, user)
 
 
-@router.get("", response_model=TokenSchema)
+@router.get("", response_model=ResFindAllCardSchema)
 def find_all(
         db_session: Session = Depends(create_session),
         user: UserSchema = Depends(get_current_user),
-) -> TokenSchema:
+) -> ResFindAllCardSchema:
     return CardService(db_session).find_all_cards(user)

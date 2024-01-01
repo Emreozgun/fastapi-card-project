@@ -10,12 +10,13 @@ from app.const import (
     AUTH_TOKEN_EXPIRE_MINUTES,
     AUTH_TOKEN_TYPE,
 )
+from fastapi.encoders import jsonable_encoder
 from app.exc import raise_with_log
 from app.models.users import UserModel
 from app.schemas.auth import (
     ReqRegisterSchema,
     ReqLoginSchema,
-    TokenSchema,
+    TokenSchema, UserSchema,
 )
 from app.schemas.card import ReqCreateCardSchema
 from app.services.base import BaseDataManager, BaseService
@@ -30,7 +31,11 @@ class AuthService(BaseService):
     def create_user(self, data: ReqRegisterSchema) -> TokenSchema:
         user = AuthDataManager(self.session).create_user(data.email, data.password)
         access_token = self._create_access_token(user_uuid=user.id)
-        card = CardService(self.session).create_card(data=ReqCreateCardSchema(label="", card_no=generate_card_no()))
+        print("USER_ACCESS_TOKEN : ", user.id, access_token)
+        if not (user.id and access_token):
+            raise_with_log(status.HTTP_400_BAD_REQUEST, "User is not created !")
+        user_data = jsonable_encoder(user)
+        card = CardService(self.session).create_card(data=ReqCreateCardSchema(label="", card_no=generate_card_no()), user=UserSchema(**user_data))
         return TokenSchema(access_token=access_token, token_type=AUTH_TOKEN_TYPE)
 
     def login(self, login: ReqLoginSchema) -> TokenSchema:
@@ -64,9 +69,11 @@ class AuthService(BaseService):
 class AuthDataManager(BaseDataManager, HashingMixin):
     def create_user(self, email: str, password: str) -> UserModel:
         model = UserModel(
-            uuid=uuid_pkg.uuid4().hex,
+            id=uuid_pkg.uuid4().hex,
             email=email,
-            hashed_password=self.bcrypt(password),
+            # password=self.bcrypt(password),
+            # TODO: bcrypt error var
+            password=password
         )
         self.session.add(model)
         return model

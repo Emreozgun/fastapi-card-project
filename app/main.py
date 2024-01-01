@@ -13,7 +13,7 @@ from app.models import create_tables
 def update_operation_ids(app: FastAPI, prefix: str) -> FastAPI:
     for route in app.routes:
         if isinstance(route, APIRoute):
-            print(f"{prefix}_{route.name}")
+            # print(f"{prefix}_{route.name}")
             route.operation_id = f"{prefix}_{route.name}"
     return app
 
@@ -38,8 +38,3 @@ if True:
 @app.get("/")
 def root() -> str:
     return "OK"
-
-
-@app.get("/version")
-def version() -> str:
-    return "[RIBU_BACKEND_GIT_VERSION_STRING]"

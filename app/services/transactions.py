@@ -39,7 +39,7 @@ class TransactionService(BaseService):
     def filtered_card_transactions(self, text: Union[str, None],
                                    user: UserSchema = Depends(get_current_user)) -> ResFilterCardTransactionsSchema:
 
-        transactions = TransactionDataManager(self.session).filter_cards_transactions(user_id=user.user_uuid,
+        transactions = TransactionDataManager(self.session).filter_cards_transactions(user_id=user.id,
                                                                                       filter_text=text)
 
         details = []
