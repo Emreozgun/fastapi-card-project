@@ -28,3 +28,6 @@ AUTH_TOKEN_ALGORITHM: Final = "HS256"
 CARD_TAGS: Final[List[str]] = ["Card"]
 CARD_URL: Final = "card"
 
+# Transaction service constants
+TRANSACTION_TAGS: Final[List[str]] = ["Transaction"]
+TRANSACTION_URL: Final = "transaction"

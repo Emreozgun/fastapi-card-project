@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from .default import SchemaCamelCaseConfig
+from typing import List
 
 
 class ResCardStatsSchema(BaseModel):
@@ -18,3 +19,16 @@ class ReqCreateTransactionSchema(BaseModel):
 
 class ResCreateTransactionSchema(BaseModel):
     t_id: str
+
+
+
+
+class CardTransactionsDetails(BaseModel):
+    label: str
+    card_no: str
+    amount: float
+    description: str
+
+
+class ResFilterCardTransactionsSchema(BaseModel):
+    details: List[CardTransactionsDetails]

@@ -2,7 +2,6 @@ import psutil
 
 from fastapi import (
     APIRouter,
-    Depends,
 )
 
 from app.const import HEALTH_CHECK_URL, HEALTH_CHECK_TAGS
@@ -18,4 +17,3 @@ async def main() -> HealthCheckSchema:
     mem = psutil.virtual_memory().percent
 
     return { "cpu": cpu, "mem": mem }
-

@@ -5,7 +5,7 @@ from app.const import (
     OPEN_API_DESCRIPTION,
     OPEN_API_TITLE,
 )
-from app.routers import auth, health_check
+from app.routers import auth, health_check, card, transaction
 from app.version import __version__
 from app.models import create_tables
 
@@ -27,6 +27,8 @@ app = FastAPI(
 
 app.include_router(update_operation_ids(auth.router, "auth"))
 app.include_router(update_operation_ids(health_check.router, "health"))
+app.include_router(update_operation_ids(card.router, "card"))
+app.include_router(update_operation_ids(transaction.router, "transaction"))
 
 # TODO development only
 if True:

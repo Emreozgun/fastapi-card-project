@@ -10,7 +10,10 @@ from app.schemas.auth import (
     UserSchema,
 )
 from fastapi import Depends, status
-from app.schemas.transactions import ResCardStatsSchema, ReqCreateTransactionSchema, ResCreateTransactionSchema
+from app.schemas.transactions import (ResCardStatsSchema, ReqCreateTransactionSchema, ResCreateTransactionSchema,
+                                      ResFilterCardTransactionsSchema, CardTransactionsDetails)
+from typing import Union
+
 from app.services.base import BaseDataManager, BaseService
 from beartype import beartype
 
@@ -33,9 +36,20 @@ class TransactionService(BaseService):
                                                                   card_id=data.card_id)
         return ResCreateTransactionSchema(t_id=transaction.id)
 
-    # def filtered_card_transactions(self, data: ReqCreateCardSchema,
-    #                                user: UserSchema = Depends(get_current_user)) -> ResCreateCardSchema:
-    #     pass
+    def filtered_card_transactions(self, text: Union[str, None],
+                                   user: UserSchema = Depends(get_current_user)) -> ResFilterCardTransactionsSchema:
+
+        transactions = TransactionDataManager(self.session).filter_cards_transactions(user_id=user.user_uuid,
+                                                                                      filter_text=text)
+
+        details = []
+
+        if len(transactions) > 0:
+            for t in transactions:
+                details.append(CardTransactionsDetails(label=t["label"], card_no=t["card_no"], amount=t["amount"],
+                                                       description=t["description"]))
+
+        return ResFilterCardTransactionsSchema(details=details)
 
     def get_card_stats(self, user: UserSchema = Depends(get_current_user)) -> ResCardStatsSchema:
         active_card_count, total_amount_spent_on_active_cards = TransactionDataManager(
@@ -96,7 +110,8 @@ class TransactionDataManager(BaseDataManager):
 
     def filter_cards_transactions(self, user_id: str, filter_text: str):
         filtered_cards = (
-            self.session.query(CardModel)
+            self.session.query(TransactionsModel)
+            .join(CardModel, TransactionsModel.card_id == CardModel.card_no)
             .filter(
                 CardModel.user_id == user_id,
                 (CardModel.label.ilike(f"%{filter_text}%") | CardModel.card_no.ilike(f"%{filter_text}%"))
