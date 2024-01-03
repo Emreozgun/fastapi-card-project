@@ -55,12 +55,27 @@ You need to create the **".env"** file and copy the data inside the sample.
 
 ## Commands
 
+Firsly, clone project from github(**to ssh clone**)
+```bash
+git clone git@github.com:Emreozgun/fastapi-card-project.git
+```
+
+or clone with **https**
+```bash
+git clone https://github.com/Emreozgun/fastapi-card-project.git
+```
+
+Then change directory
+```bash
+cd fastapi-card-project/
+```
+
 Run pwd command to be sure correct path
 ```bash
 pwd
 ```
 
-Firstly, Install packages: 
+Install packages: 
 
 ```bash
 pip3 install -r requirements.txt
