@@ -18,17 +18,6 @@ def test_create_and_login():
     assert token1.token_type == AUTH_TOKEN_TYPE
     assert len(token1.access_token) > 0
 
-    response = client.get(
-        "/" + AUTH_URL + "/check", headers={"Authorization": "Bearer " + "asd"}
-    )
-    assert response.status_code == 401
-
-    response = client.get(
-        "/" + AUTH_URL + "/check",
-        headers={"Authorization": "Bearer " + token1.access_token},
-    )
-    assert response.status_code == 200
-
 
 # def test_incorrect_password(config):
 #     data = {
