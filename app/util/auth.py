@@ -1,7 +1,5 @@
-from passlib.context import CryptContext
 from datetime import datetime
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
 
 def is_expired(expires_at: str) -> bool:
@@ -15,8 +13,10 @@ class HashingMixin:
 
     @staticmethod
     def bcrypt(password: str) -> str:
-        return pwd_context.hash(password)
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+        return hashed_password.decode('utf-8')
 
     @staticmethod
     def verify(hashed_password: str, plain_password: str) -> bool:
-        return pwd_context.verify(plain_password, hashed_password)
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))

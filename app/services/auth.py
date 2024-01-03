@@ -18,35 +18,41 @@ from app.schemas.auth import (
     ReqLoginSchema,
     TokenSchema, UserSchema,
 )
-from app.schemas.card import ReqCreateCardSchema
+from app.schemas.card import ReqCreateCardSchema, ReqUpdateCardSchema
 from app.services.base import BaseDataManager, BaseService
 from beartype import beartype
 
 from app.services.card import CardService, generate_card_no
 from app.util.auth import HashingMixin
 
-
+# TODO: util
+DEFAULT_CARD_NO = "1111111111111111"
 @beartype
 class AuthService(BaseService):
     def create_user(self, data: ReqRegisterSchema) -> TokenSchema:
         user = AuthDataManager(self.session).create_user(data.email, data.password)
-        access_token = self._create_access_token(user_uuid=user.id)
-        print("USER_ACCESS_TOKEN : ", user.id, access_token)
+        access_token = self.create_access_token(user_uuid=user.id)
         if not (user.id and access_token):
             raise_with_log(status.HTTP_400_BAD_REQUEST, "User is not created !")
         user_data = jsonable_encoder(user)
-        card = CardService(self.session).create_card(data=ReqCreateCardSchema(label="", card_no=generate_card_no()), user=UserSchema(**user_data))
+        card = CardService(self.session).create_card(data=ReqCreateCardSchema(label="", card_no=DEFAULT_CARD_NO),
+                                                     user=UserSchema(**user_data))
         return TokenSchema(access_token=access_token, token_type=AUTH_TOKEN_TYPE)
 
     def login(self, login: ReqLoginSchema) -> TokenSchema:
         user = AuthDataManager(self.session).get_user_with_login(login.email, login.password)
+        user_data = jsonable_encoder(user)
+
         if user is None:
             raise_with_log(status.HTTP_400_BAD_REQUEST, "Invalid email or password")
-        # TODO: card_status = 'ACTIVE'
-        access_token = self._create_access_token(user_uuid=user.id)
+
+        card = CardService(self.session).update_card(data=ReqUpdateCardSchema(status="active", card_no=DEFAULT_CARD_NO),
+                                                     user=UserSchema(**user_data))
+
+        access_token = self.create_access_token(user_uuid=user.id)
         return TokenSchema(access_token=access_token, token_type=AUTH_TOKEN_TYPE)
 
-    def _create_access_token(self, user_uuid: str) -> str:
+    def create_access_token(self, user_uuid: str) -> str:
         payload = {
             "user": user_uuid,
             "expires_at": self._expiration_time(),
@@ -71,9 +77,7 @@ class AuthDataManager(BaseDataManager, HashingMixin):
         model = UserModel(
             id=uuid_pkg.uuid4().hex,
             email=email,
-            # password=self.bcrypt(password),
-            # TODO: bcrypt error var
-            password=password
+            password=self.bcrypt(password),
         )
         self.session.add(model)
         return model

@@ -5,7 +5,7 @@ from pydantic import (
 
 
 class DatabaseConfig(BaseModel):
-    dsn: str = "sqlite:////tmp/db.sqlite3"
+    dsn: str = "sqlite:///./test.db"
 
     @property
     def dbname(self):
@@ -17,7 +17,7 @@ class DatabaseConfig(BaseModel):
 class Config(BaseSettings):
     database: DatabaseConfig = DatabaseConfig()
     token_key: str = ""
-    show_tables: bool = False
+    show_tables: bool = True
 
     class Config:
         env_file = ".env"

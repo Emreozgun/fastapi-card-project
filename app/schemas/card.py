@@ -1,21 +1,24 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator, ValidationError
 from typing import Optional, Any, List
-from enum import Enum
-from .default import to_camel, SchemaCamelCaseConfig
-from ..models.card import CardModel
 
 
 class ReqCreateCardSchema(BaseModel):
-    Config = SchemaCamelCaseConfig
     card_no: Optional[str] = None
     label: str
 
+    @validator("card_no", pre=True, check_fields=False)
+    def validate_card_no(cls, value):
+        if value is not None:
+            digits_only = ''.join(filter(str.isdigit, value))
+            if len(digits_only) != 16:
+                raise ValueError("Card number must be a 16-digit string")
+        return value
+
 
 class ReqUpdateCardSchema(BaseModel):
-    Config = SchemaCamelCaseConfig
-    status: str
+    status: Optional[str] = None
     card_no: str
-    label: str
+    label: Optional[str] = None
 
 
 class ResCreateCardSchema(BaseModel):

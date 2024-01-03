@@ -1,5 +1,5 @@
 import uuid as uuid_pkg
-from sqlalchemy import delete, func
+from sqlalchemy import delete, func, text
 
 from app.exc import raise_with_log
 # from app.exc import raise_with_log
@@ -42,21 +42,24 @@ class TransactionService(BaseService):
         transactions = TransactionDataManager(self.session).filter_cards_transactions(user_id=user.id,
                                                                                       filter_text=text)
 
-        details = []
-
-        if len(transactions) > 0:
-            for t in transactions:
-                details.append(CardTransactionsDetails(label=t["label"], card_no=t["card_no"], amount=t["amount"],
-                                                       description=t["description"]))
+        details = [
+            CardTransactionsDetails(
+                label=t.label,
+                card_no=t.card_no,
+                amount=t.amount,
+                description=t.description,
+            )
+            for t in transactions
+        ]
 
         return ResFilterCardTransactionsSchema(details=details)
 
     def get_card_stats(self, user: UserSchema = Depends(get_current_user)) -> ResCardStatsSchema:
         active_card_count, total_amount_spent_on_active_cards = TransactionDataManager(
-            self.session).get_active_card_stats(user_id=user.user_uuid)
+            self.session).get_active_card_stats(user_id=user.id)
 
         passive_card_count, total_amount_spent_on_passive_cards = TransactionDataManager(
-            self.session).get_active_card_stats(user_id=user.user_uuid)
+            self.session).get_passive_card_stats(user_id=user.id)
 
         return ResCardStatsSchema(active_card_count=active_card_count, passive_card_count=passive_card_count,
                                   total_amount_spent_on_passive_cards=total_amount_spent_on_passive_cards,
@@ -76,6 +79,7 @@ class TransactionDataManager(BaseDataManager):
         self.session.add(model)
         return model
 
+    # TODO: Add beartype for all function
     def get_active_card_stats(self, user_id: str):
         active_card_count = (
             self.session.query(func.count())
@@ -90,7 +94,7 @@ class TransactionDataManager(BaseDataManager):
             .scalar()
         )
 
-        return active_card_count, total_amount_spent_on_active_cards
+        return 0 if active_card_count is None else active_card_count, 0.00 if total_amount_spent_on_active_cards is None else total_amount_spent_on_active_cards
 
     def get_passive_card_stats(self, user_id: str):
         passive_card_count = (
@@ -106,18 +110,23 @@ class TransactionDataManager(BaseDataManager):
             .scalar()
         )
 
-        return passive_card_count, total_amount_spent_on_passive_cards
+        return 0 if passive_card_count is None else passive_card_count, 0.00 if total_amount_spent_on_passive_cards is None else total_amount_spent_on_passive_cards
 
     def filter_cards_transactions(self, user_id: str, filter_text: str):
-        filtered_cards = (
-            self.session.query(TransactionsModel)
-            .join(CardModel, TransactionsModel.card_id == CardModel.card_no)
-            .filter(
-                CardModel.user_id == user_id,
-                (CardModel.label.ilike(f"%{filter_text}%") | CardModel.card_no.ilike(f"%{filter_text}%"))
-            )
-            .all()
+
+        result = self.session.execute(
+            text("""
+            SELECT transactions.*, card.*
+            FROM transactions
+            JOIN card ON transactions.card_id = card.card_no
+            WHERE card.user_id = :user_id
+            AND (card.label LIKE '%' || :filter_text || '%' OR card.card_no LIKE '%' || :filter_text || '%');
+            """
+                 ),
+            {"user_id": user_id, "filter_text": filter_text}
         )
+
+        filtered_cards = result.fetchall()
 
         return filtered_cards
 

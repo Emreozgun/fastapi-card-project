@@ -1,6 +1,6 @@
-from pydantic import BaseModel
 from enum import Enum
 from .default import SchemaCamelCaseConfig
+from pydantic import BaseModel, EmailStr
 
 
 class VerificationType(str, Enum):
@@ -10,7 +10,7 @@ class VerificationType(str, Enum):
 
 class ReqRegisterSchema(BaseModel):
     Config = SchemaCamelCaseConfig
-    email: str
+    email: EmailStr
     password: str
 
 

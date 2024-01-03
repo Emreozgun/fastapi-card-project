@@ -11,7 +11,7 @@ from app.exc import raise_with_log
 from app.schemas.auth import UserSchema
 from app.util.auth import is_expired
 
-oauth2_schema = OAuth2PasswordBearer(tokenUrl=AUTH_URL, auto_error=False)
+oauth2_schema = OAuth2PasswordBearer(tokenUrl=AUTH_URL)
 
 
 def get_current_user(
@@ -30,7 +30,7 @@ def get_current_user(
         if is_expired(expires_at):
             raise_with_log(status.HTTP_401_UNAUTHORIZED, "Token expired")
 
-        return UserSchema(user_uuid=user_uuid)
+        return UserSchema(id=user_uuid)
     except JWTError:
         raise_with_log(status.HTTP_401_UNAUTHORIZED, "Invalid credentials")
     raise_with_log(status.HTTP_500_INTERNAL_SERVER_ERROR, "undefined case")
