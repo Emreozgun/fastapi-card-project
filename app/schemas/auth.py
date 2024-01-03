@@ -1,31 +1,28 @@
 from enum import Enum
-from .default import SchemaCamelCaseConfig
 from pydantic import BaseModel, EmailStr
 
 
-class VerificationType(str, Enum):
-    register = "register"
-    login = "login"
-
-
+# Request Schemas
 class ReqRegisterSchema(BaseModel):
-    Config = SchemaCamelCaseConfig
     email: EmailStr
     password: str
 
 
 class ReqLoginSchema(BaseModel):
-    Config = SchemaCamelCaseConfig
-    email: str
+    email: EmailStr
     password: str
 
 
+# Response Schemas
+class VerificationType(str, Enum):
+    register = "register"
+    login = "login"
+
+
 class TokenSchema(BaseModel):
-    Config = SchemaCamelCaseConfig
     access_token: str
     token_type: str
 
 
 class UserSchema(BaseModel):
-    Config = SchemaCamelCaseConfig
     id: str

@@ -22,15 +22,16 @@ app = FastAPI(
     title=OPEN_API_TITLE,
     description=OPEN_API_DESCRIPTION,
     version=__version__,
-    swagger_ui_parameters={"defaultModelsExpandDepth": -1},
+    swagger_ui_parameters={"swagger": "2.0", "info": {"title": "Custom UI"}, "paths": {}},
 )
+
 
 app.include_router(update_operation_ids(auth.router, "auth"))
 app.include_router(update_operation_ids(health_check.router, "health"))
 app.include_router(update_operation_ids(card.router, "card"))
 app.include_router(update_operation_ids(transaction.router, "transaction"))
 
-# TODO development only
+# development only
 if True:
     create_tables()
 

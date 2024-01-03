@@ -1,31 +1,52 @@
-from pydantic import BaseModel, Field, validator, ValidationError
-from typing import Optional, Any, List
+from pydantic import BaseModel, validator
+from typing import Optional, List
+
+from app.validators.card import CardValidator
+from beartype import beartype
 
 
-class ReqCreateCardSchema(BaseModel):
+# Request Schemas
+class ReqCreateCardSchema(BaseModel, CardValidator):
     card_no: Optional[str] = None
     label: str
 
     @validator("card_no", pre=True, check_fields=False)
-    def validate_card_no(cls, value):
-        if value is not None:
-            digits_only = ''.join(filter(str.isdigit, value))
-            if len(digits_only) != 16:
-                raise ValueError("Card number must be a 16-digit string")
-        return value
+    def validate_card_no_create(cls, value: str):
+        return cls.validate_card_no(value)
+
+    @validator("label", pre=True, check_fields=False)
+    def validate_label(cls, value: str):
+        return cls.validate_label_length(value)
 
 
-class ReqUpdateCardSchema(BaseModel):
+class ReqUpdateCardSchema(BaseModel, CardValidator):
     status: Optional[str] = None
     card_no: str
     label: Optional[str] = None
 
+    @validator("card_no", pre=True, check_fields=False)
+    def validate_card_no_create(cls, value: str):
+        return cls.validate_card_no(value)
 
-class ResCreateCardSchema(BaseModel):
+    @validator("label", pre=True, check_fields=False)
+    def validate_label(cls, value: str):
+        return cls.validate_label_length(value)
+
+    @validator("status", pre=True, check_fields=False)
+    def validate_status_field(cls, value: str):
+        return cls.validate_statuses(value, ['passive', 'active'])
+
+
+class ReqDeleteCardSchema(BaseModel, CardValidator):
     card_no: str
 
+    @validator("card_no", pre=True, check_fields=False)
+    def validate_card_no_create(cls, value: str):
+        return cls.validate_card_no(value)
 
-class ReqDeleteCardSchema(BaseModel):
+
+# Response Schemas
+class ResCreateCardSchema(BaseModel):
     card_no: str
 
 

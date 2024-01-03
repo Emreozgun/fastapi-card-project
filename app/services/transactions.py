@@ -5,14 +5,14 @@ from app.exc import raise_with_log
 # from app.exc import raise_with_log
 from app.models.card import CardModel
 from app.models.transactions import TransactionsModel
-from app.models.users import UserModel
 from app.schemas.auth import (
     UserSchema,
 )
 from fastapi import Depends, status
 from app.schemas.transactions import (ResCardStatsSchema, ReqCreateTransactionSchema, ResCreateTransactionSchema,
                                       ResFilterCardTransactionsSchema, CardTransactionsDetails)
-from typing import Union
+from typing import Union, Tuple
+from decimal import Decimal
 
 from app.services.base import BaseDataManager, BaseService
 from beartype import beartype
@@ -69,7 +69,6 @@ class TransactionService(BaseService):
 @beartype
 class TransactionDataManager(BaseDataManager):
     def create(self, amount: float, description: str, card_id: str) -> TransactionsModel:
-        # TODO: Auto-generated yapilabilir.
         model = TransactionsModel(
             id=uuid_pkg.uuid4().hex,
             amount=amount,
@@ -79,8 +78,7 @@ class TransactionDataManager(BaseDataManager):
         self.session.add(model)
         return model
 
-    # TODO: Add beartype for all function
-    def get_active_card_stats(self, user_id: str):
+    def get_active_card_stats(self, user_id: str) -> Tuple[int, Decimal]:
         active_card_count = (
             self.session.query(func.count())
             .filter(CardModel.user_id == user_id, CardModel.status == 'active')
@@ -94,9 +92,9 @@ class TransactionDataManager(BaseDataManager):
             .scalar()
         )
 
-        return 0 if active_card_count is None else active_card_count, 0.00 if total_amount_spent_on_active_cards is None else total_amount_spent_on_active_cards
+        return 0 if active_card_count is None else active_card_count, Decimal(0.00) if total_amount_spent_on_active_cards is None else total_amount_spent_on_active_cards
 
-    def get_passive_card_stats(self, user_id: str):
+    def get_passive_card_stats(self, user_id: str) -> Tuple[int, Decimal]:
         passive_card_count = (
             self.session.query(func.count())
             .filter(CardModel.user_id == user_id, CardModel.status == 'passive')
@@ -110,7 +108,7 @@ class TransactionDataManager(BaseDataManager):
             .scalar()
         )
 
-        return 0 if passive_card_count is None else passive_card_count, 0.00 if total_amount_spent_on_passive_cards is None else total_amount_spent_on_passive_cards
+        return 0 if passive_card_count is None else passive_card_count, Decimal(0.00) if total_amount_spent_on_passive_cards is None else total_amount_spent_on_passive_cards
 
     def filter_cards_transactions(self, user_id: str, filter_text: str):
 
@@ -130,8 +128,3 @@ class TransactionDataManager(BaseDataManager):
 
         return filtered_cards
 
-    # TODO: dev env
-    if True:
-        def delete_all(self):
-            self.session.execute(delete(UserModel))
-            self.session.commit()

@@ -5,7 +5,7 @@ from typing import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import DateTime, func
+from sqlalchemy import DateTime, func, String
 from datetime import datetime
 
 
@@ -16,13 +16,10 @@ class SQLModel(DeclarativeBase):
     to the corresponding schema.
     """
 
-    id: Mapped[str] = mapped_column("id", primary_key=True, unique=True)
-    date_created: Mapped[datetime] = mapped_column(
-        "date_created", DateTime(timezone=False), default=func.now()
-    )
-    date_modified: Mapped[datetime] = mapped_column(
-        "date_modified", DateTime(timezone=False), default=func.now(), onupdate=func.now()
-    )
+    id = mapped_column(String(255), primary_key=True, unique=True)
+
+    date_created = mapped_column(DateTime(timezone=False), default=func.now())
+    date_modified = mapped_column( DateTime(timezone=False), default=func.now(), onupdate=func.now())
 
     # date_created: Mapped[DateTime] = mapped_column("date_created", default=func.now())
     # date_modified: Mapped[DateTime] = mapped_column("date_modified", default=func.now(), onupdate=func.now())

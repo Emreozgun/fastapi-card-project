@@ -1,9 +1,9 @@
 import uuid as uuid_pkg
 from fastapi import Depends
-from typing import Optional, List, Type
+from typing import Optional, List
 
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy import delete, update, func, desc, select
+from sqlalchemy import update, func, desc, and_, or_
 # from app.exc import raise_with_log
 from app.models.card import CardModel
 from app.models.users import UserModel
@@ -36,6 +36,7 @@ class CardService(BaseService):
         return ResCreateCardSchema(card_no=card.card_no)
 
     def update_card(self, data: ReqUpdateCardSchema, user: UserSchema = Depends(get_current_user)) -> ResMessageSchema:
+        print("dStatus: ", data.status)
         card = CardDataManager(self.session).update_card(status=data.status, label=data.label, card_no=data.card_no,
                                                          user_id=user.id)
         if card:
@@ -108,28 +109,39 @@ class CardDataManager(BaseDataManager):
             return None
 
     def update_card(self, card_no: str, user_id: str, label: Optional[str] = None, status: Optional[str] = None) -> Optional[CardModel]:
-
-        stmt = update(CardModel).where(
-            CardModel.card_no == card_no,
-            CardModel.user_id == user_id,
-            CardModel.status != 'deleted'
+        # TODO: merge with transaction part. Same functions.
+        active_cards = (
+            self.session.query(CardModel.card_no)
+            .filter(
+                CardModel.user_id == user_id,
+                CardModel.status == 'active'
+            )
+            .all()
         )
 
-        if label is not None:
-            stmt = stmt.values(label=label)
-        if status is not None:
-            stmt = stmt.values(status=status)
+        if len(active_cards) > 1 or card_no not in [card[0] for card in active_cards]:
+            stmt = update(CardModel).where(
+                    CardModel.card_no == card_no,
+                    CardModel.user_id == user_id,
+                    CardModel.status != 'deleted'
+            )
 
-        result = self.session.execute(stmt)
+            if label is not None:
+                stmt = stmt.values(label=label)
+            if status is not None:
+                print("status: ", status)
+                stmt = stmt.values(status=status)
 
-        updated_rows = result.rowcount
+            result = self.session.execute(stmt)
 
-        if updated_rows > 0:
-            updated_model = self.session.query(CardModel).filter(
-                CardModel.card_no == card_no,
-                CardModel.user_id == user_id
-            ).first()
-            return updated_model
+            updated_rows = result.rowcount
+
+            if updated_rows > 0:
+                updated_model = self.session.query(CardModel).filter(
+                    CardModel.card_no == card_no,
+                    CardModel.user_id == user_id
+                ).first()
+                return updated_model
 
         return None
 
@@ -138,8 +150,4 @@ class CardDataManager(BaseDataManager):
             CardModel.user_id == user_id, CardModel.status != 'deleted'
         ).order_by(desc(CardModel.date_modified)).all()
         return res
-    # TODO: dev env
-    if True:
-        def delete_all(self):
-            self.session.execute(delete(UserModel))
-            self.session.commit()
+

@@ -22,11 +22,11 @@ from app.schemas.card import ReqCreateCardSchema, ReqUpdateCardSchema
 from app.services.base import BaseDataManager, BaseService
 from beartype import beartype
 
-from app.services.card import CardService, generate_card_no
+from app.services.card import CardService
 from app.util.auth import HashingMixin
+from app.util.card import DEFAULT_CARD_NO
 
-# TODO: util
-DEFAULT_CARD_NO = "1111111111111111"
+
 @beartype
 class AuthService(BaseService):
     def create_user(self, data: ReqRegisterSchema) -> TokenSchema:
@@ -40,6 +40,7 @@ class AuthService(BaseService):
         return TokenSchema(access_token=access_token, token_type=AUTH_TOKEN_TYPE)
 
     def login(self, login: ReqLoginSchema) -> TokenSchema:
+        print(login.email, login.password)
         user = AuthDataManager(self.session).get_user_with_login(login.email, login.password)
         user_data = jsonable_encoder(user)
 
@@ -58,12 +59,6 @@ class AuthService(BaseService):
             "expires_at": self._expiration_time(),
         }
         return jwt.encode(payload, config.token_key, algorithm=AUTH_TOKEN_ALGORITHM)
-
-    #
-    # def logout(self, user: UserSessionSchema) -> None:
-    #     AuthDataManager(self.session).update_user_session(
-    #         user.user_uuid, user.session_uuid, "closed"
-    #     )
 
     @staticmethod
     def _expiration_time() -> str:
@@ -96,9 +91,3 @@ class AuthDataManager(BaseDataManager, HashingMixin):
         if not isinstance(model, UserModel):
             return None
         return model
-
-    # TODO: dev env
-    if True:
-        def delete_all(self):
-            self.session.execute(delete(UserModel))
-            self.session.commit()

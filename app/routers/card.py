@@ -33,6 +33,7 @@ def update(
         db_session: Session = Depends(create_session),
         user: UserSchema = Depends(get_current_user),
 ) -> ResMessageSchema:
+    print("cStatus", data.status)
     return CardService(db_session).update_card(data, user)
 
 

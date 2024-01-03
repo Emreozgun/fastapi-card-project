@@ -1,4 +1,4 @@
-from fastapi import Depends, status, Request
+from fastapi import Depends, status, Request, security
 from typing import Optional
 from jose import jwt, JWTError
 from app.backend.config import config
@@ -11,7 +11,9 @@ from app.exc import raise_with_log
 from app.schemas.auth import UserSchema
 from app.util.auth import is_expired
 
-oauth2_schema = OAuth2PasswordBearer(tokenUrl=AUTH_URL)
+oauth2_schema = OAuth2PasswordBearer(
+    tokenUrl="/auth/login"
+)
 
 
 def get_current_user(
@@ -19,6 +21,7 @@ def get_current_user(
         request: Request = None,
 ) -> Optional[UserSchema]:
     assert request is not None  # zorunlu kontrol, bu gelmezse 500 error vermeli
+
     if token is None:
         raise_with_log(status.HTTP_401_UNAUTHORIZED, "Invalid token")
     try:

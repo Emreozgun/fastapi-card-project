@@ -5,6 +5,9 @@ from app.models import CardModel
 from beartype import beartype
 
 
+DEFAULT_CARD_NO = "1111111111111111"
+
+
 @beartype
 def generate_card_no(excluded_card_nos:  List[CardModel] = None) -> str:
     excluded_card_nos = excluded_card_nos or set()

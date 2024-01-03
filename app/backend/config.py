@@ -2,10 +2,16 @@ from pydantic import (
     BaseModel,
     BaseSettings,
 )
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 
 class DatabaseConfig(BaseModel):
-    dsn: str = "sqlite:///./test.db"
+    dsn: str = os.environ.get('MYSQL_HOST')
+    # For local development
+    # dsn: str = "sqlite:///./test.db"
 
     @property
     def dbname(self):
@@ -16,7 +22,7 @@ class DatabaseConfig(BaseModel):
 
 class Config(BaseSettings):
     database: DatabaseConfig = DatabaseConfig()
-    token_key: str = ""
+    token_key: str = os.environ.get('JWT_TOKEN_KEY')
     show_tables: bool = True
 
     class Config:
